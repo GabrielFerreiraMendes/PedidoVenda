@@ -1,0 +1,47 @@
+unit ProdutoService;
+
+interface
+
+uses uDmPrincipal, Produto, System.Generics.Collections,
+  FireDAC.Comp.Client;
+
+type
+  TProdutoService = Class
+  public
+    class function getListaProduto(): TObjectList<TProduto>;
+  End;
+
+implementation
+
+{ TProdutoService }
+
+class function TProdutoService.getListaProduto: TObjectList<TProduto>;
+var
+  qry: TFDQuery;
+  usuarioLista: TObjectList<TProduto>;
+begin
+  qry := TFDQuery.Create(nil);
+  usuarioLista := TObjectList<TUsuario>.Create;
+
+  try
+    qry.Connection := dmPrincipal.FDConnection1;
+
+    qry.SQL.Clear;
+    qry.SQL.Add('SELECT * FROM USUARIO');
+    qry.Open;
+
+    qry.First;
+    while not qry.Eof do
+    begin
+      usuarioLista.Add(TUsuario.Create(qry.FieldByName('CODIGO').AsInteger,
+        qry.FieldByName('NOME').AsString, qry.FieldByName('CIDADE').AsString,
+        qry.FieldByName('UF').AsString));
+
+      qry.Next;
+    end;
+  finally
+    Result := usuarioLista;
+  end;
+end;
+
+end.

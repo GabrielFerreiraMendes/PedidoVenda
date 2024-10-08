@@ -1,0 +1,201 @@
+object frmPrincipal: TfrmPrincipal
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'frmPrincipal'
+  ClientHeight = 563
+  ClientWidth = 684
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  TextHeight = 15
+  object Panel1: TPanel
+    Left = 0
+    Top = 0
+    Width = 684
+    Height = 563
+    Align = alClient
+    TabOrder = 0
+    DesignSize = (
+      684
+      563)
+    object lbValorTotal: TLabel
+      Left = 12
+      Top = 506
+      Width = 66
+      Height = 15
+      Caption = 'Valor Total: 0'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clCrimson
+      Font.Height = -12
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      ParentFont = False
+      Visible = False
+    end
+    object GroupBox2: TGroupBox
+      Left = 12
+      Top = 66
+      Width = 480
+      Height = 79
+      Anchors = []
+      Caption = ' Produto'
+      TabOrder = 2
+      object Label1: TLabel
+        Left = 10
+        Top = 52
+        Width = 68
+        Height = 15
+        Caption = 'Quantidade: '
+      end
+      object Label2: TLabel
+        Left = 178
+        Top = 52
+        Width = 68
+        Height = 15
+        Caption = 'Vlr. Unit'#225'rio: '
+      end
+      object cbProduto: TComboBox
+        Left = 10
+        Top = 16
+        Width = 103
+        Height = 23
+        Enabled = False
+        TabOrder = 0
+        Text = 'C'#243'd. Produto'
+        OnExit = cbProdutoExit
+      end
+      object nbQuantidadeProduto: TNumberBox
+        Left = 84
+        Top = 49
+        Width = 80
+        Height = 23
+        Hint = 'Quantidade'
+        Enabled = False
+        TabOrder = 1
+      end
+      object nbValorProduto: TNumberBox
+        Left = 252
+        Top = 49
+        Width = 121
+        Height = 23
+        Enabled = False
+        Mode = nbmCurrency
+        TabOrder = 2
+      end
+      object etDescricaoProduto: TEdit
+        Left = 119
+        Top = 16
+        Width = 349
+        Height = 23
+        Enabled = False
+        TabOrder = 3
+        Text = 'Descri'#231#227'o do produto'
+      end
+    end
+    object GroupBox1: TGroupBox
+      Left = 10
+      Top = 16
+      Width = 480
+      Height = 44
+      Anchors = []
+      Caption = ' Usuario '
+      TabOrder = 0
+      object cbUsuario: TComboBox
+        Left = 10
+        Top = 16
+        Width = 105
+        Height = 23
+        TabOrder = 0
+        Text = 'C'#243'd. Usu'#225'rio'
+        OnExit = cbUsuarioExit
+      end
+      object etNomeUsuario: TEdit
+        Left = 121
+        Top = 16
+        Width = 349
+        Height = 23
+        Enabled = False
+        TabOrder = 1
+        Text = 'Nome do usu'#225'rio'
+      end
+    end
+    object btnIniciarPedido: TButton
+      Left = 496
+      Top = 31
+      Width = 168
+      Height = 25
+      Caption = 'Iniciar pedido de venda'
+      Enabled = False
+      TabOrder = 1
+      OnClick = btnIniciarPedidoClick
+    end
+    object btnAdicionarProduto: TButton
+      Left = 498
+      Top = 98
+      Width = 168
+      Height = 25
+      Caption = 'Adicionar produto'
+      Enabled = False
+      TabOrder = 3
+      OnClick = btnAdicionarProdutoClick
+    end
+    object GroupBox5: TGroupBox
+      Left = 10
+      Top = 151
+      Width = 654
+      Height = 351
+      Caption = ' Produtos '
+      TabOrder = 4
+      object grdItensPedido: TStringGrid
+        Left = 2
+        Top = 17
+        Width = 650
+        Height = 332
+        Align = alClient
+        FixedCols = 0
+        RowCount = 1
+        FixedRows = 0
+        TabOrder = 0
+        OnKeyDown = grdItensPedidoKeyDown
+        ExplicitLeft = 1
+      end
+    end
+    object btSalvar: TButton
+      Left = 498
+      Top = 529
+      Width = 168
+      Height = 25
+      Caption = 'Gravar Pedido de venda'
+      Enabled = False
+      TabOrder = 5
+      OnClick = btSalvarClick
+    end
+    object btnCancelar: TButton
+      Left = 324
+      Top = 529
+      Width = 168
+      Height = 25
+      Caption = 'Cancelar Pedido de venda'
+      Enabled = False
+      TabOrder = 6
+      OnClick = btnCancelarClick
+    end
+    object btnPedidoVenda: TButton
+      Left = 10
+      Top = 529
+      Width = 168
+      Height = 25
+      Caption = 'Consultar Pedido de venda'
+      TabOrder = 7
+      OnClick = btnPedidoVendaClick
+    end
+  end
+end

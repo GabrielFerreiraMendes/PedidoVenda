@@ -1,0 +1,48 @@
+unit Model;
+
+interface
+
+uses System.Rtti, System.Generics.Collections;
+
+type
+ TModel = Class
+  private
+    function getCamposDB: TDictionary<string, string>;
+   public
+    property CamposDB: TDictionary<string, string> read getCamposDB;
+    function CampoDB(): String;
+ End;
+
+implementation
+
+{ TModel }
+
+function TModel.CampoDB: String;
+var
+ rttiContext: TRttiContext;
+ rttiProperty: TRttiProperty;
+ rttiType: TRttiType;
+begin
+
+  rttiContext := TRttiContext.Create;
+  try
+    rttiType := rttiContext.GetType(Self.ClassType);
+
+  for rttiProperty in rttiType.GetProperties() do
+   begin
+
+   end;
+  finally
+   rttiContext.Free;
+  end;
+
+
+
+end;
+
+function TModel.getCamposDB: TDictionary<string, string>;
+begin
+
+end;
+
+end.

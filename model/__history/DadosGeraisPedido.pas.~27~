@@ -1,0 +1,43 @@
+unit DadosGeraisPedido;
+
+interface
+
+uses System.Generics.Collections, ProdutosPedido, System.SysUtils;
+
+type
+  TDadosGeraisPedido = Class(TObject)
+  private
+    FNumeroPedido: Integer;
+    FDataEmissao: TDateTime;
+    FCodigo_Usuario: Integer;
+    FValorTotal: Currency;
+    FProdutosPedidos: TObjectList<TProdutosPedido>;
+  public
+    property NumeroPedido: Integer read FNumeroPedido;
+    property DataEmissao: TDateTime read FDataEmissao write FDataEmissao;
+    property CodigoUsuario: Integer read FCodigo_Usuario write FCodigo_Usuario;
+    property ValorTotal: Currency read FValorTotal write FValorTotal;
+    property ProdutosPedidos: TObjectList<TProdutosPedido> read FProdutosPedidos
+      write FProdutosPedidos;
+
+    constructor Create(); overload;
+    destructor Destroy(); overload;
+  End;
+
+implementation
+
+{ TDadosGeraisPedido }
+
+constructor TDadosGeraisPedido.Create;
+begin
+  inherited;
+  FProdutosPedidos := TObjectList<TProdutosPedido>.Create;
+end;
+
+destructor TDadosGeraisPedido.Destroy;
+begin
+  inherited;
+  FreeAndNil(FProdutosPedidos);
+end;
+
+end.

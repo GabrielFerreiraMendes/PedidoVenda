@@ -1,0 +1,13 @@
+unit UserController;
+
+interface
+
+
+type
+ TUserController = class
+   public
+    function getUsuarioByCodigo(codigo: String): String;
+ end;
+implementation
+
+end.

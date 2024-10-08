@@ -1,0 +1,19 @@
+unit Produto;
+
+interface
+
+type
+  TProduto = Class
+  private
+    FCodigo: Integer;
+    FDescricao: String;
+    FPreco: Currency;
+  public
+    property Codigo: Integer read FCodigo write FCodigo;
+    property Descricao: String read FDescricao write FDescricao;
+    property Preco: Currency read FPreco write FPreco;
+  End;
+
+implementation
+
+end.

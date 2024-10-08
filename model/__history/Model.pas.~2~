@@ -1,0 +1,26 @@
+unit Model;
+
+interface
+
+type
+ TModel = Class
+   public
+    function CampoDB(): String;
+ End;
+
+implementation
+
+{ TModel }
+
+function TModel.CampoDB: String;
+var
+ prop: property;
+begin
+  for prop in Self.ClassType do
+   begin
+
+   end;
+
+end;
+
+end.

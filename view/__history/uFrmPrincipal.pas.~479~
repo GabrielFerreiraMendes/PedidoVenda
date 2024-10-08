@@ -1,0 +1,518 @@
+unit uFrmPrincipal;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Data.DB, FireDAC.Stan.Intf,
+  FireDAC.Stan.Option, FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS,
+  FireDAC.Phys.Intf, FireDAC.DApt.Intf, FireDAC.Stan.Async, FireDAC.DApt,
+  FireDAC.Comp.DataSet, FireDAC.Comp.Client, Vcl.Grids, Vcl.DBGrids,
+  Datasnap.DBClient, IniFiles, FireDAC.Phys.MySQL,
+  Vcl.StdCtrls, Vcl.NumberBox, Vcl.DBCtrls, Vcl.ExtCtrls, uDmPrincipal,
+  UsuarioController, ProdutoController, DadosGeraisPedidoController,
+  System.Generics.Collections, System.RegularExpressions, System.JSON;
+
+type
+  TfrmPrincipal = class(TForm)
+    Panel1: TPanel;
+    GroupBox2: TGroupBox;
+    GroupBox1: TGroupBox;
+    btnIniciarPedido: TButton;
+    btnAdicionarProduto: TButton;
+    GroupBox5: TGroupBox;
+    cbUsuario: TComboBox;
+    etNomeUsuario: TEdit;
+    cbProduto: TComboBox;
+    nbQuantidadeProduto: TNumberBox;
+    nbValorProduto: TNumberBox;
+    etDescricaoProduto: TEdit;
+    grdItensPedido: TStringGrid;
+    btSalvar: TButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    btnCancelar: TButton;
+    lbValorTotal: TLabel;
+    btnPedidoVenda: TButton;
+    procedure FormShow(Sender: TObject);
+    procedure btnIniciarPedidoClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure btnAdicionarProdutoClick(Sender: TObject);
+    procedure btSalvarClick(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure cbProdutoExit(Sender: TObject);
+    procedure cbUsuarioExit(Sender: TObject);
+    procedure btnCancelarClick(Sender: TObject);
+    procedure btnPedidoVendaClick(Sender: TObject);
+    procedure grdItensPedidoKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+  private
+    UsuarioController: TUsuarioController;
+    ProdutoController: TProdutoController;
+    DadosGeraisPedidoController: TDadosGeraisPedidoController;
+    UltimaLinhaGrid: Integer;
+    EditandoGrid: Boolean;
+
+    function getPedidoVenda(): TJSONObject;
+    function onlyNumbers(text: String): Boolean;
+    procedure resetaProduto;
+    procedure resetaUsuario;
+    procedure iniciaPedidoControleComponenteTela;
+    procedure finalizaPedidoControleComponenteTela;
+    function ValorTotalPedidoVenda: Currency;
+    procedure atualizaGrid(index: Integer);
+    procedure ConnectDB;
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  frmPrincipal: TfrmPrincipal;
+  dmPrincipal: TdmPrincipal;
+
+const
+  CODIGO_PRODUTO_TEXT = 'Cód. Produto';
+  DESCRICAO_PRODUTO_TEXT = 'Descrição do produto';
+  CODIGO_USUARIO_TEXT = 'Cód. Usuário';
+  NOME_USUARIO_TEXT = 'Nome do usuário';
+
+implementation
+
+{$R *.dfm}
+
+procedure TfrmPrincipal.finalizaPedidoControleComponenteTela();
+begin
+  Self.resetaProduto;
+  Self.resetaUsuario;
+
+  cbProduto.Enabled := False;
+  nbQuantidadeProduto.Enabled := False;
+  nbValorProduto.Enabled := False;
+  lbValorTotal.Visible := False;
+  btnAdicionarProduto.Enabled := False;
+  btnIniciarPedido.Enabled := False;
+  btnCancelar.Enabled := False;
+  btSalvar.Enabled := False;
+  cbUsuario.Enabled := True;
+  btnPedidoVenda.Enabled := True;
+end;
+
+procedure TfrmPrincipal.iniciaPedidoControleComponenteTela();
+begin
+  cbProduto.Enabled := True;
+  nbQuantidadeProduto.Enabled := True;
+  nbValorProduto.Enabled := True;
+  lbValorTotal.Visible := True;
+  btnAdicionarProduto.Enabled := True;
+  btnIniciarPedido.Enabled := False;
+  btnCancelar.Enabled := True;
+  btSalvar.Enabled := True;
+  cbUsuario.Enabled := False;
+end;
+
+procedure TfrmPrincipal.resetaProduto();
+begin
+  cbProduto.text := CODIGO_PRODUTO_TEXT;
+  etDescricaoProduto.text := DESCRICAO_PRODUTO_TEXT;
+
+  nbQuantidadeProduto.Value := 0;
+  nbValorProduto.Value := 0;
+end;
+
+procedure TfrmPrincipal.resetaUsuario();
+begin
+  cbUsuario.text := CODIGO_USUARIO_TEXT;
+  etNomeUsuario.text := NOME_USUARIO_TEXT;
+end;
+
+procedure TfrmPrincipal.btnCancelarClick(Sender: TObject);
+var
+  I: Integer;
+begin
+  Self.resetaProduto;
+  Self.resetaUsuario;
+
+  for I := 0 to grdItensPedido.RowCount - 1 do
+  begin
+    grdItensPedido.Cells[1, I].Empty;
+    grdItensPedido.Cells[2, I].Empty;
+    grdItensPedido.Cells[3, I].Empty;
+    grdItensPedido.Cells[4, I].Empty;
+  end;
+
+  grdItensPedido.RowCount := 1;
+  UltimaLinhaGrid := 1;
+
+  Self.finalizaPedidoControleComponenteTela;
+  cbUsuario.SetFocus;
+end;
+
+procedure TfrmPrincipal.btSalvarClick(Sender: TObject);
+begin
+  DadosGeraisPedidoController.save(getPedidoVenda());
+  Self.finalizaPedidoControleComponenteTela;
+end;
+
+procedure TfrmPrincipal.btnIniciarPedidoClick(Sender: TObject);
+begin
+  Self.iniciaPedidoControleComponenteTela;
+
+  cbProduto.Items.AddStrings(ProdutoController.getListaCodigo());
+end;
+
+procedure TfrmPrincipal.btnPedidoVendaClick(Sender: TObject);
+var
+  JSONObject: TJSONObject;
+  JSONPair: TJSONPair;
+  numeroPedido: String;
+  valorTotal: Currency;
+begin
+  numeroPedido := InputBox('Número de pedido', 'Prompt', '0');
+
+  while not onlyNumbers(numeroPedido) do
+  begin
+    ShowMessage('Número de pedido inválido! Digite novamente.');
+    numeroPedido := InputBox('Número de pedido', 'Prompt', '0');
+  end;
+
+  JSONObject := DadosGeraisPedidoController.getByNumeroPedido(numeroPedido);
+
+  cbUsuario.text := JSONObject.GetValue<String>('CodigoUsuario');
+  cbUsuarioExit(Sender);
+  btnIniciarPedido.Click;
+
+  for JSONPair in TJSONObject(JSONObject.GetValue('ProdutosPedidos')) do
+  begin
+    cbProduto.text := TJSONObject(JSONPair).GetValue<String>('CodigoProduto');
+    nbQuantidadeProduto.Value := TJSONObject(JSONPair)
+      .GetValue<Currency>('Quantidade');
+    nbValorProduto.Value := TJSONObject(JSONPair)
+      .GetValue<Currency>('ValorUnitario');
+
+    cbProdutoExit(Sender);
+    btnAdicionarProduto.Click;
+  end;
+end;
+
+procedure TfrmPrincipal.cbUsuarioExit(Sender: TObject);
+begin
+  try
+    if not onlyNumbers(cbUsuario.text) then
+    begin
+      if not SameText(cbUsuario.text, CODIGO_USUARIO_TEXT) then
+      begin
+        ShowMessage('Código inválido!');
+        cbUsuario.SetFocus;
+      end;
+
+      btnPedidoVenda.Enabled := True;
+
+      Raise Exception.Create(EmptyStr)
+    end;
+
+    if (not SameText(cbUsuario.text, EmptyStr)) and
+      (UsuarioController.getByCodigo(cbUsuario.text) <> nil) then
+    begin
+      etNomeUsuario.text := UsuarioController.getByCodigo(cbUsuario.text).Nome;
+
+      btnIniciarPedido.Enabled := True;
+      btnPedidoVenda.Enabled := False;
+
+      Exit;
+    end;
+
+    ShowMessage('Usuário não encontrado!');
+    Raise Exception.Create(EmptyStr)
+  except
+    { Ao setar o text original, seleciona o texto para que
+      usuário possa informar novo valor sem precisar apagar antes. }
+    Self.resetaUsuario;
+
+    if cbUsuario.Enabled then
+    begin
+      cbUsuario.SelStart := 0;
+      cbUsuario.SelLength := Length(cbUsuario.text) + 1;
+    end;
+  end;
+end;
+
+procedure TfrmPrincipal.atualizaGrid(index: Integer);
+var
+  valorTotal: Currency;
+begin
+  grdItensPedido.Cells[0, index] := cbProduto.text;
+  grdItensPedido.Cells[1, index] := etDescricaoProduto.text;
+  grdItensPedido.Cells[2, index] := nbQuantidadeProduto.text;
+  grdItensPedido.Cells[3, index] := nbValorProduto.text;
+
+  valorTotal := nbQuantidadeProduto.Value * nbValorProduto.Value;
+  grdItensPedido.Cells[4, index] := CurrToStr(valorTotal);
+end;
+
+procedure TfrmPrincipal.btnAdicionarProdutoClick(Sender: TObject);
+var
+  valorTotal: Currency;
+begin
+  try
+    if not grdItensPedido.Enabled then
+    begin
+      if MessageDlg(Format('Confirma a alteração do item: %s - %s ?',
+        [cbProduto.text, etDescricaoProduto.text]), mtConfirmation,
+        [mbYes, mbNo], 0, mbYes) = mrYes then
+      begin
+        Self.atualizaGrid(grdItensPedido.Row);
+        grdItensPedido.Enabled := True;
+
+        Exit;
+      end;
+
+      grdItensPedido.Enabled := True;
+      Abort;
+    end;
+
+    Self.atualizaGrid(UltimaLinhaGrid);
+
+    grdItensPedido.RowCount := grdItensPedido.RowCount + 1;
+    UltimaLinhaGrid := UltimaLinhaGrid + 1;
+  finally
+    lbValorTotal.Caption := Format('Valor total: %m', [ValorTotalPedidoVenda]);
+
+    Self.resetaProduto;
+  end;
+end;
+
+function TfrmPrincipal.onlyNumbers(text: String): Boolean;
+var
+  I: Integer;
+begin
+  if SameText(text, EmptyStr) then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  Result := True;
+
+  for I := 1 to Length(text) do
+  begin
+    if not TRegEx.IsMatch(text[I], '^(([0-9]))$') then
+    begin
+      Result := False;
+      break;
+    end;
+  end;
+end;
+
+procedure TfrmPrincipal.cbProdutoExit(Sender: TObject);
+begin
+  try
+    if not onlyNumbers(cbProduto.text) then
+    begin
+      if not SameText(cbProduto.text, CODIGO_PRODUTO_TEXT) then
+      begin
+        ShowMessage('Código inválido!');
+        cbProduto.SetFocus;
+      end;
+
+      raise Exception.Create(EmptyStr);
+    end;
+
+    if not SameText(cbProduto.text, EmptyStr) and
+      (ProdutoController.getByCodigo(cbProduto.text) <> nil) then
+    begin
+      etDescricaoProduto.text := ProdutoController.getByCodigo(cbProduto.text)
+        .Descricao;
+
+      nbValorProduto.Value := ProdutoController.getByCodigo
+        (cbProduto.text).Preco;
+
+      nbQuantidadeProduto.Value := 1;
+
+      Exit;
+    end;
+
+    ShowMessage('Produto não encontrado!');
+    raise Exception.Create(EmptyStr);
+  except
+    { Ao setar o text original, seleciona o texto para que
+      usuário possa informar novo valor sem precisar apagar antes. }
+    Self.resetaProduto;
+
+    if cbProduto.Enabled then
+    begin
+      cbProduto.SelStart := 0;
+      cbProduto.SelLength := Length(cbProduto.text) + 1;
+    end;
+  end;
+end;
+
+procedure TfrmPrincipal.FormCreate(Sender: TObject);
+begin
+  UltimaLinhaGrid := 1;
+
+  grdItensPedido.Cells[0, 0] := 'Cód. Produto';
+  grdItensPedido.Cells[1, 0] := 'Descrição do produto';
+  grdItensPedido.Cells[2, 0] := 'Quantidade';
+  grdItensPedido.Cells[3, 0] := 'Vlr. Unitário';
+  grdItensPedido.Cells[4, 0] := 'Vlr. Total';
+
+  grdItensPedido.ColWidths[0] := 80;
+  grdItensPedido.ColWidths[1] := 300;
+  grdItensPedido.ColWidths[2] := 80;
+  grdItensPedido.ColWidths[3] := 80;
+  grdItensPedido.ColWidths[4] := 80;
+end;
+
+procedure TfrmPrincipal.FormDestroy(Sender: TObject);
+begin
+  UsuarioController.Destroy;
+  ProdutoController.Destroy;
+  DadosGeraisPedidoController.Destroy;
+end;
+
+procedure TfrmPrincipal.ConnectDB;
+var
+  iniFile: TINIFile;
+  FDConnection: TFDConnection;
+  FDPhys: TFDPhysMySQLDriverLink;
+begin
+  FDConnection := TFDConnection.Create(nil);
+  FDPhys := TFDPhysMySQLDriverLink.Create(nil);
+
+  try
+    iniFile := TINIFile.Create
+      ('C:\Users\Gabriel\Documents\Embarcadero\Studio\Projects\WK_Teste\db\conf.INI');
+
+    if FDConnection.Connected then
+      FDConnection.Connected := False;
+
+    FDPhys.VendorLib := iniFile.ReadString('CONFIG', 'LibPath', '1');
+
+    FDConnection.Params.Values['Database'] := iniFile.ReadString('CONFIG',
+      'Database', '1');
+
+    FDConnection.Params.Values['UserName'] := iniFile.ReadString('CONFIG',
+      'Username', '1');
+
+    FDConnection.Params.Values['Password'] := iniFile.ReadString('CONFIG',
+      'Password', '1');
+
+    FDConnection.Params.Values['Server'] := iniFile.ReadString('CONFIG',
+      'Server', '1');
+
+    FDConnection.Params.Values['Port'] := iniFile.ReadString('CONFIG',
+      'Port', '1');
+
+    FDPhys.DriverID := 'MySQL';  
+    FDConnection.DriverName := 'MySQL';
+
+    dmPrincipal.setDBConfig(FDConnection, FDPhys);    
+  finally
+    FreeAndNil(iniFile);
+  end;
+end;
+
+procedure TfrmPrincipal.FormShow(Sender: TObject);
+begin
+  dmPrincipal := TdmPrincipal.Create(Self);
+
+  UsuarioController := TUsuarioController.Create;
+  ProdutoController := TProdutoController.Create;
+  DadosGeraisPedidoController := TDadosGeraisPedidoController.Create;
+
+  Self.ConnectDB();
+
+  cbUsuario.Items.AddStrings(UsuarioController.getListaCodigo());
+end;
+
+function TfrmPrincipal.getPedidoVenda: TJSONObject;
+var
+  pedidoInfo: TJSONObject;
+  produtoInfo: TJSONObject;
+  index: Integer;
+begin
+  pedidoInfo := TJSONObject.Create;
+
+  pedidoInfo.AddPair('DataEmissao', DateTimeToStr(now()));
+  pedidoInfo.AddPair('CodigoUsuario', cbUsuario.text);
+  pedidoInfo.AddPair('ValorTotal', ValorTotalPedidoVenda);
+
+  produtoInfo := TJSONObject.Create;
+
+  for index := 1 to grdItensPedido.RowCount - 1 do
+  begin
+    produtoInfo.AddPair('CodigoProduto', grdItensPedido.Cells[0, index]);
+    produtoInfo.AddPair('DescricaoProduto', grdItensPedido.Cells[1, index]);
+    produtoInfo.AddPair('Quantidade', grdItensPedido.Cells[2, index]);
+    produtoInfo.AddPair('ValorUnitario', grdItensPedido.Cells[3, index]
+      .Replace(',', '.'));
+    produtoInfo.AddPair('ValorTotal', grdItensPedido.Cells[4, index]
+      .Replace(',', '.'));
+  end;
+
+  pedidoInfo.AddPair('ProdutosPedidos', TJSONArray.Create.Add(produtoInfo));
+
+  Result := pedidoInfo;
+end;
+
+function TfrmPrincipal.ValorTotalPedidoVenda: Currency;
+var
+  I: Integer;
+begin
+  Result := 0;
+
+  for I := 1 to grdItensPedido.RowCount - 1 do
+    Result := Result + StrToCurr(grdItensPedido.Cells[4, I]);
+end;
+
+procedure TfrmPrincipal.grdItensPedidoKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  index, aRow: Integer;
+begin
+  if (Key = VK_RETURN) then
+  begin
+    cbProduto.text := grdItensPedido.Cells[0, grdItensPedido.Row];
+    cbProdutoExit(Sender);
+
+    nbQuantidadeProduto.Value :=
+      StrToCurr(grdItensPedido.Cells[2, grdItensPedido.Row]);
+    nbValorProduto.Value :=
+      StrToCurr(grdItensPedido.Cells[3, grdItensPedido.Row]);
+
+    grdItensPedido.Enabled := False;
+  end;
+
+  if (Key = VK_DELETE) then
+  begin
+    try
+      grdItensPedido.Enabled := False;
+
+      if MessageDlg(Format('Confirma a exclusão do item: %s - %s ?',
+        [grdItensPedido.Cells[0, grdItensPedido.Row],
+        ProdutoController.getByCodigo(grdItensPedido.Cells[0,
+        grdItensPedido.Row]).Descricao]), mtConfirmation, [mbYes, mbNo], 0,
+        mbYes) = mrYes then
+      begin
+        aRow := grdItensPedido.Row;
+
+        for Index := aRow to grdItensPedido.RowCount - 2 do
+          grdItensPedido.Rows[Index].Assign(grdItensPedido.Rows[Index + 1]);
+
+        grdItensPedido.Rows[grdItensPedido.RowCount - 1].Clear;
+        grdItensPedido.RowCount := grdItensPedido.RowCount - 1;
+
+      end;
+    finally
+      lbValorTotal.Caption := Format('Valor total: %m',
+        [ValorTotalPedidoVenda]);
+
+      grdItensPedido.Enabled := True;
+    end;
+
+  end;
+end;
+
+end.

@@ -1,0 +1,28 @@
+program WK_Teste;
+
+uses
+  Vcl.Forms,
+  uFrmPrincipal in 'view\uFrmPrincipal.pas' {frmPrincipal},
+  uDmPrincipal in 'data\uDmPrincipal.pas' {dmPrincipal: TDataModule},
+  UsuarioService in 'service\UsuarioService.pas',
+  Usuario in 'model\Usuario.pas',
+  UsuarioController in 'controller\UsuarioController.pas',
+  Produto in 'model\Produto.pas',
+  ProdutoService in 'service\ProdutoService.pas',
+  ProdutoController in 'controller\ProdutoController.pas',
+  DadosGeraisPedido in 'model\DadosGeraisPedido.pas',
+  ProdutosPedido in 'model\ProdutosPedido.pas',
+  DadosGeraisPedidoService in 'service\DadosGeraisPedidoService.pas',
+  ProdutosPedidoService in 'service\ProdutosPedidoService.pas',
+  DadosGeraisPedidoController in 'controller\DadosGeraisPedidoController.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TfrmPrincipal, frmPrincipal);
+  Application.CreateForm(TdmPrincipal, dmPrincipal);
+  Application.CreateForm(TdmPrincipal, dmPrincipal);
+  Application.Run;
+end.

@@ -1,0 +1,113 @@
+unit DadosGeraisPedidoService;
+
+interface
+
+uses uDmPrincipal, DadosGeraisPedido, FireDAC.Comp.Client, ProdutosPedido,
+  System.Generics.Collections, ProdutosPedidoService, System.SysUtils;
+
+type
+  TDadosGeraisPedidoService = class
+  private
+  public
+    class procedure save(DadosGeraisPedido: TDadosGeraisPedido);
+    class function getByNumeroPedido(NumeroPedido: String): TDadosGeraisPedido;
+  end;
+
+implementation
+
+{ TDadosGeraisPedidoService }
+
+class function TDadosGeraisPedidoService.getByNumeroPedido(NumeroPedido: String)
+  : TDadosGeraisPedido;
+var
+  qry: TFDQuery;
+  ProdutosPedido: TProdutosPedido;
+begin
+  qry := TFDQuery.Create(nil);
+
+  try
+    qry.Connection := dmPrincipal.FDConnection1;
+
+    qry.Close;
+    qry.SQL.Clear;
+    qry.SQL.Add('SELECT * FROM DADOS_GERAIS_PEDIDO');
+    qry.SQL.Add('WHERE NUMERO_PEDIDO = :NUMERO_PEDIDO;');
+    qry.ParamByName('NUMERO_PEDIDO').AsString := NumeroPedido;
+    qry.Open;
+
+    if qry.IsEmpty then
+    begin
+      Result := nil;
+
+      Exit;
+    end;
+
+    Result := TDadosGeraisPedido.Create(qry.FieldByName('NUMERO_PEDIDO')
+      .AsInteger, qry.FieldByName('DATA_EMISSAO').AsDateTime,
+      qry.FieldByName('CODIGO_USUARIO').AsInteger,
+      qry.FieldByName('VALOR_TOTAL').AsCurrency);
+
+    Result.ProdutosPedidos := TProdutosPedidoService.getByNumeroPedido
+      (NumeroPedido);
+  finally
+    qry.Close;
+    FreeAndNil(qry);
+  end;
+end;
+
+class procedure TDadosGeraisPedidoService.save(DadosGeraisPedido
+  : TDadosGeraisPedido);
+var
+  qry: TFDQuery;
+  NumeroPedido: Integer;
+  ProdutosPedido: TProdutosPedido;
+begin
+  qry := TFDQuery.Create(nil);
+
+  dmPrincipal.StartTransaction;
+  try
+    try
+      qry.Connection := dmPrincipal.FDConnection1;
+
+      qry.Close;
+      qry.SQL.Clear;
+      qry.SQL.Add('INSERT INTO DADOS_GERAIS_PEDIDO(DATA_EMISSAO,   ');
+      qry.SQL.Add('                                CODIGO_USUARIO, ');
+      qry.SQL.Add('                                VALOR_TOTAL)    ');
+      qry.SQL.Add('VALUES(:DATA_EMISSAO,                           ');
+      qry.SQL.Add('       :CODIGO_USUARIO,                         ');
+      qry.SQL.Add('       :VALOR_TOTAL);                           ');
+      qry.ParamByName('DATA_EMISSAO').AsDateTime :=
+        DadosGeraisPedido.DataEmissao;
+      qry.ParamByName('VALOR_TOTAL').AsCurrency := DadosGeraisPedido.ValorTotal;
+
+      qry.ParamByName('CODIGO_USUARIO').AsInteger :=
+        DadosGeraisPedido.CodigoUsuario;
+
+      qry.ExecSQL;
+
+      { Recupera o id do pedido recém inserido }
+      qry.Close;
+      qry.SQL.Clear;
+      qry.SQL.Add('SELECT MAX(NUMERO_PEDIDO) AS ID FROM DADOS_GERAIS_PEDIDO;');
+      qry.Open;
+
+      NumeroPedido := qry.FieldByName('ID').AsInteger;
+
+      for ProdutosPedido in DadosGeraisPedido.ProdutosPedidos do
+      begin
+        ProdutosPedido.NumeroPedido := NumeroPedido;
+        TProdutosPedidoService.save(ProdutosPedido);
+      end;
+
+     dmPrincipal.Commit;
+    except
+     dmPrincipal.RollBack;
+    end;
+  finally
+    qry.Close;
+    FreeAndNil(qry);
+  end;
+end;
+
+end.

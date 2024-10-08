@@ -1,0 +1,92 @@
+object dmPrincipal: TdmPrincipal
+  Height = 480
+  Width = 640
+  object FDConnection1: TFDConnection
+    Params.Strings = (
+      'Database=teste'
+      'User_Name=root'
+      'Password=masterkey'
+      'Server=localhost'
+      'DriverID=MySQL')
+    Connected = True
+    Left = 128
+    Top = 152
+  end
+  object FDPhysMySQLDriverLink1: TFDPhysMySQLDriverLink
+    VendorLib = 'C:\Users\Gabriel\OneDrive\Documentos\LIBMYSQL.DLL'
+    Left = 128
+    Top = 80
+  end
+  object DataSource1: TDataSource
+    DataSet = FDQuery1
+    Left = 480
+    Top = 24
+  end
+  object FDQuery1: TFDQuery
+    Connection = FDConnection1
+    SQL.Strings = (
+      'SELECT * FROM DADOS_GERAIS_PEDIDO')
+    Left = 560
+    Top = 24
+    object FDQuery1NUMERO_PEDIDO: TLargeintField
+      AutoGenerateValue = arAutoInc
+      FieldName = 'NUMERO_PEDIDO'
+      Origin = 'NUMERO_PEDIDO'
+      ProviderFlags = [pfInWhere, pfInKey]
+    end
+    object FDQuery1DATA_EMISSAO: TDateTimeField
+      FieldName = 'DATA_EMISSAO'
+      Origin = 'DATA_EMISSAO'
+      Required = True
+    end
+    object FDQuery1CODIGO_USUARIO: TLargeintField
+      FieldName = 'CODIGO_USUARIO'
+      Origin = 'CODIGO_USUARIO'
+      Required = True
+    end
+    object FDQuery1VALOR_TOTAL: TBCDField
+      AutoGenerateValue = arDefault
+      FieldName = 'VALOR_TOTAL'
+      Origin = 'VALOR_TOTAL'
+      Precision = 15
+      Size = 2
+    end
+  end
+  object FDQuery2: TFDQuery
+    Active = True
+    Connection = FDConnection1
+    SQL.Strings = (
+      'SELECT * FROM USUARIO;')
+    Left = 560
+    Top = 88
+    object FDQuery2CODIGO: TLargeintField
+      AutoGenerateValue = arAutoInc
+      FieldName = 'CODIGO'
+      Origin = 'CODIGO'
+      ProviderFlags = [pfInWhere, pfInKey]
+    end
+    object FDQuery2NOME: TStringField
+      FieldName = 'NOME'
+      Origin = 'NOME'
+      Required = True
+      Size = 60
+    end
+    object FDQuery2CIDADE: TStringField
+      FieldName = 'CIDADE'
+      Origin = 'CIDADE'
+      Required = True
+      Size = 60
+    end
+    object FDQuery2UF: TStringField
+      FieldName = 'UF'
+      Origin = 'UF'
+      Required = True
+      Size = 2
+    end
+  end
+  object DataSource2: TDataSource
+    DataSet = FDQuery2
+    Left = 480
+    Top = 88
+  end
+end

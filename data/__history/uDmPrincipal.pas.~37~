@@ -1,0 +1,96 @@
+unit uDmPrincipal;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.MySQL,
+  FireDAC.Phys.MySQLDef, FireDAC.VCLUI.Wait, Data.DB, FireDAC.Comp.Client,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
+  FireDAC.Comp.DataSet, IniFiles;
+
+type
+  TdmPrincipal = class(TDataModule)
+    FDConnection1: TFDConnection;
+    FDPhysMySQLDriverLink1: TFDPhysMySQLDriverLink;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    procedure ConnectDB();
+
+    procedure StartTransaction;
+    procedure Commit;
+    procedure RollBack;
+  end;
+
+var
+  dmPrincipal: TdmPrincipal;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+{$R *.dfm}
+{ TdmPrincipal }
+
+procedure TdmPrincipal.Commit;
+begin
+  Self.FDConnection1.Commit;
+end;
+
+procedure TdmPrincipal.ConnectDB;
+var
+  iniFile: TINIFile;
+begin
+  try
+    iniFile := TINIFile.Create('C:\Users\Gabriel\Documents\Embarcadero\Studio\Projects\WK_Teste\db\conf.INI');
+
+    if FDConnection1.Connected then
+     FDConnection1.Connected := false;
+
+    FDPhysMySQLDriverLink1.VendorLib := iniFile.ReadString('CONFIG',
+      'LibPath', '1');
+
+    FDConnection1.Params.Values['Database'] :=
+      iniFile.ReadString('CONFIG', 'Database', '1');
+
+    FDConnection1.Params.Values['UserName'] :=
+      iniFile.ReadString('CONFIG', 'Username', '1');
+
+    FDConnection1.Params.Values['Password'] :=
+      iniFile.ReadString('CONFIG', 'Password', '1');
+
+    FDConnection1.Params.Values['Server'] :=
+      iniFile.ReadString('CONFIG', 'Server', '1');
+
+    FDConnection1.Params.Values['Port'] :=
+      iniFile.ReadString('CONFIG', 'Port', '1');
+
+    FDConnection1.Connected := True;
+  finally
+    FreeAndNil(iniFile);
+  end;
+end;
+
+procedure TdmPrincipal.RollBack;
+begin
+  if not Self.FDConnection1.InTransaction then
+    raise Exception.Create('Não há transação ativa.');
+
+  Self.FDConnection1.RollBack;
+end;
+
+procedure TdmPrincipal.StartTransaction;
+begin
+  if not Self.FDConnection1.InTransaction then
+    raise Exception.Create('Não há transação ativa.');
+
+  { Permite transações aninhadas }
+  Self.FDConnection1.TxOptions.EnableNested := True;
+  Self.FDConnection1.TxOptions.AutoCommit := True;
+
+  Self.FDConnection1.StartTransaction;
+end;
+
+end.

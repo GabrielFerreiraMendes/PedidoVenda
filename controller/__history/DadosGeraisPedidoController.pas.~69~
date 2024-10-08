@@ -1,0 +1,72 @@
+unit DadosGeraisPedidoController;
+
+interface
+
+uses DadosGeraisPedido, DadosGeraisPedidoService, System.JSON, System.SysUtils,
+  ProdutosPedido;
+
+type
+  TDadosGeraisPedidoController = class
+  public
+    procedure save(JSONObject: TJSONObject);
+    procedure getByNumeroPedido(NumeroPedido: String);
+  end;
+
+implementation
+
+{ TDadosGeraisPedidoController }
+
+procedure TDadosGeraisPedidoController.getByNumeroPedido(NumeroPedido: String);
+var
+  pedidoInfo: TJSONObject;
+  produtoInfo: TJSONObject;
+  index: Integer;
+  Pedido: TDadosGeraisPedido;
+begin
+  Pedido := TDadosGeraisPedidoService.getByNumeroPedido(NumeroPedido);
+
+  pedidoInfo := TJSONObject.Create;
+
+  pedidoInfo.AddPair('DataEmissao', Pedido.DataEmissao);
+  pedidoInfo.AddPair('CodigoUsuario', cbUsuario.text);
+  pedidoInfo.AddPair('ValorTotal', ValorTotalPedidoVenda);
+
+  produtoInfo := TJSONObject.Create;
+
+  for index := 1 to grdItensPedido.RowCount - 1 do
+  begin
+    produtoInfo.AddPair('CodigoProduto', grdItensPedido.Cells[0, index]);
+    produtoInfo.AddPair('DescricaoProduto', grdItensPedido.Cells[1, index]);
+    produtoInfo.AddPair('Quantidade', grdItensPedido.Cells[2, index]);
+    produtoInfo.AddPair('ValorUnitario', grdItensPedido.Cells[3, index]
+      .Replace(',', '.'));
+    produtoInfo.AddPair('ValorTotal', grdItensPedido.Cells[4, index]
+      .Replace(',', '.'));
+  end;
+
+  pedidoInfo.AddPair('ProdutosPedidos', TJSONArray.Create.Add(produtoInfo));
+end
+
+procedure TDadosGeraisPedidoController.save(JSONObject: TJSONObject);
+var
+  DadosGeraisPedido: TDadosGeraisPedido;
+  JSONPair: TJSONPair;
+begin
+  DadosGeraisPedido := TDadosGeraisPedido.Create
+    (StrToDateTime(JSONObject.GetValue<String>('DataEmissao')),
+    JSONObject.GetValue<Integer>('CodigoUsuario'),
+    JSONObject.GetValue<Currency>('ValorTotal'));
+
+  for JSONPair in TJSONObject(JSONObject.GetValue('ProdutosPedidos')) do
+  begin
+    DadosGeraisPedido.ProdutosPedidos.Add(TProdutosPedido.Create(0,
+      TJSONObject(JSONPair).GetValue<Integer>('CodigoProduto'),
+      TJSONObject(JSONPair).GetValue<Integer>('Quantidade'),
+      TJSONObject(JSONPair).GetValue<Currency>('ValorUnitario'),
+      TJSONObject(JSONPair).GetValue<Currency>('ValorTotal')));
+  end;
+
+  TDadosGeraisPedidoService.save(DadosGeraisPedido);
+end;
+
+end.
